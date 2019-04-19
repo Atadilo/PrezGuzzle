@@ -1,0 +1,29 @@
+h1 {
+    color: black !important;
+}
+
+.reveal section img {
+    margin: 0 !important;
+    background: none !important;
+    border: none !important;   
+    box-shadow: none !important ;
+}
+
+.reveal blockquote {
+    width: 100% !important;
+}
+
+.small {
+    font-size: 70% !important;
+}
+
+.smaller {
+    font-size: 30% !important;
+}
+.reveal pre {
+    width: 110% !important;
+}
+
+.reveal pre code {
+    max-height: 500px;
+}

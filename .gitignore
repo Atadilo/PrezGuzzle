@@ -1,0 +1,6 @@
+.bundle
+.php_cs.cache
+main.html
+main-withresults.html
+reveal\.js/
+vendor

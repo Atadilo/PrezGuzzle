@@ -1,0 +1,35 @@
+# PrezGuzzle
+
+## Prerequisites
+
+- https://asciidoctor.org/docs/asciidoctor-revealjs/[asciidoctor-revealjs]
+- https://www.docker.com/[docker]
+- https://docs.docker.com/compose/[docker-compose]
+
+
+## Generate Html format
+
+```
+bundle exec asciidoctor-revealjs main.adoc
+```
+
+
+## Env
+
+Start env 
+```
+$ composer install
+$ cd docker
+$ docker-compose up
+```
+
+
+## Demo
+
+```
+$ php demo1.php
+$ php demo2.php
+$ php demo3.php
+$ php demo4.php
+```
+

@@ -1,0 +1,134 @@
+:revealjs_theme: white
+:revealjs_center: false
+:icons: font
+:iconfont-cdn: css/font-awesome.min.css
+:customcss: customcss.css
+:source-highlighter: coderay
+= Guzzle
+
+[quote]
+--
+Guzzle is a PHP HTTP client that makes it easy to send HTTP requests and trivial to integrate with web services.
+--
+
+http://docs.guzzlephp.org
+
+[%notitle]
+== @me
+
+*Jérôme Marchand*
+
+image::images/logoSentinelo_medium.png[link="https://www.sentinelo.com"] 
+SysAdmin, LeadDev, DevOps 
+
+
+* icon:twitter[] : https://twitter.com/Neken13[@Neken13]
+* icon:github[] : https://github.com/atadilo
+
+[.fragment]
+--
+Next week :
+
+image::images/zenika.jpg[width=100]
+--
+
+
+== image:images/logoSentinelo_medium.png[]
+
+[%header,cols=2]
+|===
+|Solution SAAS Retail :
+|Outil métier:
+
+a|image:images/cockpit-logo.png[] Cockpit ([.small]#PHP, Symfony4, Javascript, Mongo#)
+
+image:images/newrones-logo.png[] Newrones ([.small]#Drupal, MySQL, ElasticSearch#)
+a|Focus ([.small]#Symfony3, ExtJS#)
+
+...
+|===
+
+[.fragment]
+--
+*Sentinelo* recherche un dev backend : christophe.agnola@sentinelo.com
+--
+
+== Disclaimer
+
+
+== Client Guzzle
+
+[source,php]
+----
+$client = new Client(
+    [
+    // Base URI is used with relative requests
+    'base_uri' => 'http://httpbin.org',
+    // You can set any number of default request options.
+    'timeout'  => 2.0,
+    'headers' => ['MyToken'=> 'Bearer mytoken'],
+    ]
+);
+----
+
+
+[source,php]
+----
+$response = $client->get('/');
+----
+
+== Response
+
+[source,php]
+----
+class GuzzleHttp\Psr7\Response {
+  $reasonPhrase =>    "OK",
+  $statusCode =>      200,
+  $protocol =>        "1.1",
+  $headers => [
+    'Server' =>       [ "gunicorn/19.9.0" ],
+    'Date' =>         [ "Thu, 18 Apr 2019 12:30:00 GMT" ],
+    'Connection' =>   [ "keep-alive" ],
+    'Content-Type' => [ "application/json" ],
+    'Content-Length' =>                    [ "259"  ],
+    'Access-Control-Allow-Origin' =>       [ "*"    ],
+    'Access-Control-Allow-Credentials' =>  [ "true" ],
+    ...
+  ],
+  $stream =>  class GuzzleHttp\Psr7\Stream {...}
+  ...
+}
+
+----
+
+== Sending Requests
+
+* Get
+** Simple
+** Override Request options
+** Redirection
+** Error/Exception
+** Body (json/string/object)
+* Post
+
+== Async Requests
+
+* Get
+* Error
+* Chain
+
+
+== Concurrent requests
+
+* Promise array
+
+== Pool connection
+
+* yield
+
+== Annexes
+
+* MiddleWare
+* gregurco/guzzle-bundle-oauth2-plugin
+
+== Questions

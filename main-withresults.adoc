@@ -1,0 +1,604 @@
+:revealjs_theme: white
+:revealjs_center: false
+:icons: font
+:iconfont-cdn: css/font-awesome.min.css
+:customcss: customcss.css
+:source-highlighter: coderay
+= Guzzle
+
+[quote]
+--
+Guzzle is a PHP HTTP client that makes it easy to send HTTP requests and trivial to integrate with web services.
+--
+
+http://docs.guzzlephp.org
+
+[%notitle]
+== @me
+
+*Jérôme Marchand*
+
+image::images/logoSentinelo_medium.png[link="https://www.sentinelo.com"] 
+SysAdmin, LeadDev, DevOps 
+
+
+* icon:twitter[] : https://twitter.com/Neken13[@Neken13]
+* icon:github[] : https://github.com/atadilo
+
+[.fragment]
+--
+Next week :
+
+image::images/zenika.jpg[width=100]
+--
+
+
+== image:images/logoSentinelo_medium.png[]
+
+[%header,cols=2]
+|===
+|Solution SAAS Retail :
+|Outil métier:
+
+a|image:images/cockpit-logo.png[] Cockpit ([.small]#PHP, Symfony4, Javascript, Mongo#)
+
+image:images/newrones-logo.png[] Newrones ([.small]#Drupal, MySQL, ElasticSearch#)
+a|Focus ([.small]#Symfony3, ExtJS#)
+
+...
+|===
+
+[.fragment]
+--
+*Sentinelo* recherche un dev backend : christophe.agnola@sentinelo.com
+--
+
+== Disclaimer
+
+
+== Guzzle Client  
+[source,php]
+----
+$client = new Client(
+    [
+    // Base URI is used with relative requests
+    'base_uri' => 'http://httpbin.org',
+    // You can set any number of default request options.
+    'timeout'  => 2.0,
+    'headers' => ['MyToken'=> 'Bearer mytoken'],
+    ]
+);
+----
+
+
+[source,php]
+----
+$client->get('/');
+----
+
+=== Response
+
+[source,php]
+----
+class GuzzleHttp\Psr7\Response {
+  $reasonPhrase =>    "OK",
+  $statusCode =>      200,
+  $protocol =>        "1.1",
+  $headers => [
+    'Server' =>       [ "gunicorn/19.9.0" ],
+    'Date' =>         [ "Thu, 18 Apr 2019 12:30:00 GMT" ],
+    'Connection' =>   [ "keep-alive" ],
+    'Content-Type' => [ "application/json" ],
+    'Content-Length' =>                    [ "259"  ],
+    'Access-Control-Allow-Origin' =>       [ "*"    ],
+    'Access-Control-Allow-Credentials' =>  [ "true" ],
+    ...
+  ],
+  $stream =>  class GuzzleHttp\Psr7\Stream {...}
+  ...
+}
+
+----
+
+== Sending Requests
+
+[source,php]
+----
+$client->get('/get');
+----
+
+[source]
+----
+HTTP/1.1 200 OK
+
+{
+  "args": {}, 
+  "headers": {
+    "Host": "localhost:8086", 
+    "Mytoken": "Bearer mytoken", 
+    "User-Agent": "GuzzleHttp/6.3.3 curl/7.47.0 PHP/7.3.4-1+ubuntu16.04.1+deb.sury.org+3"
+  }, 
+  "origin": "172.18.0.1", 
+  "url": "http://localhost:8086/get"
+}
+----
+
+
+=== Override Request options
+
+[source,php]
+----
+$client->get('/get', 
+        ['headers' => [
+            'MyToken'=> 'Bearer myNewTokenWithAdminRole',
+            'User-Agent' => 'Jerome MARCHAND'
+        ]]
+    );
+----
+
+[source]
+----
+HTTP/1.1 200 OK
+
+{
+  "args": {}, 
+  "headers": {
+    "Host": "localhost:8086", 
+    "Mytoken": "Bearer myNewTokenWithAdminRole", 
+    "User-Agent": "Jerome MARCHAND"
+  }, 
+  "origin": "172.18.0.1", 
+  "url": "http://localhost:8086/get"
+}
+----
+
+
+=== Redirection
+
+[source,php]
+----
+$client->get('/redirect/1', 
+        ['debug' => true]
+    );
+----
+
+[.smaller]
+[source]
+----
+* Hostname localhost was found in DNS cache
+*   Trying 127.0.0.1...
+* Connected to localhost (127.0.0.1) port 8086 (#1)
+> GET /redirect/1 HTTP/1.1
+Host: localhost:8086
+MyToken: Bearer mytoken
+User-Agent: GuzzleHttp/6.3.3 curl/7.47.0 PHP/7.3.4-1+ubuntu16.04.1+deb.sury.org+3
+
+< HTTP/1.1 302 FOUND
+< Content-Type: text/html; charset=utf-8
+< Location: /get
+< 
+
+* Connection #1 to host localhost left intact
+* Connected to localhost (127.0.0.1) port 8086 (#1)
+> GET /get HTTP/1.1
+Host: localhost:8086
+MyToken: Bearer mytoken
+User-Agent: GuzzleHttp/6.3.3 curl/7.47.0 PHP/7.3.4-1+ubuntu16.04.1+deb.sury.org+3
+
+< HTTP/1.1 200 OK
+< Connection: keep-alive
+< Content-Type: application/json
+< 
+* Connection #1 to host localhost left intact
+----
+
+=== Redirection (do not follow)
+
+[source,php]
+----
+$client->get('/redirect/1', 
+        ['allow_redirects'=> false,'debug' => true]
+    );
+----
+
+[.smaller]
+[source]
+----
+* Hostname localhost was found in DNS cache
+*   Trying 127.0.0.1...
+* Connected to localhost (127.0.0.1) port 8086 (#2)
+> GET /redirect/1 HTTP/1.1
+Host: localhost:8086
+MyToken: Bearer mytoken
+User-Agent: GuzzleHttp/6.3.3 curl/7.47.0 PHP/7.3.4-1+ubuntu16.04.1+deb.sury.org+3
+
+< HTTP/1.1 302 FOUND
+< Content-Type: text/html; charset=utf-8
+< Location: /get
+< 
+* Connection #2 to host localhost left intact
+----
+
+=== Error (1/2)
+
+[source,php]
+----
+try {
+    $client->get('/status/500');
+} catch (GuzzleHttp\Exception\RequestException $e) {
+    if ($e->hasResponse()) {
+        echo Psr7\str($e->getResponse());
+    }
+}
+----
+
+[source]
+----
+HTTP/1.1 500 INTERNAL SERVER ERROR
+Server: gunicorn/19.9.0
+Date: Thu, 18 Apr 2019 12:42:27 GMT
+Connection: keep-alive
+Content-Type: text/html; charset=utf-8
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Content-Length: 0
+----
+
+=== Error (2/2)
+
+[source,php]
+----
+$client->get('/status/500', 
+        ['http_errors' => false]
+    );
+----
+
+[source]
+----
+HTTP/1.1 500 INTERNAL SERVER ERROR
+Server: gunicorn/19.9.0
+Date: Thu, 18 Apr 2019 12:42:39 GMT
+Connection: keep-alive
+Content-Type: text/html; charset=utf-8
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Content-Length: 0
+----
+
+=== Body as stream (1/3)
+
+[source,php]
+----
+$response = $client->get('/json');
+
+$body = $response->getBody();
+----
+
+[source]
+----
+/mnt/data/Projects/Prez/PrezGuzzle/demo1.php:141:
+class GuzzleHttp\Psr7\Stream#27 (7) {
+  private $stream =>         resource(87) of type (stream)
+  private $size =>           NULL
+  private $seekable =>       bool(true)
+  private $readable =>       bool(true)
+  private $writable =>       bool(true)
+  private $uri =>            string(10) "php://temp"
+  private $customMetadata => array(0) {  }
+}
+
+----
+
+
+=== Body as stream (2/3)
+
+[source,php]
+----
+$body->getContents()
+----
+
+[source]
+----
+/mnt/data/Projects/Prez/PrezGuzzle/demo1.php:155:
+string(429) "{\n  "slideshow": {\n    "author": "Yours Truly", \n    
+"date": "date of publication", \n    "slides": [\n      {\n        
+"title": "Wake up to WonderWidgets!", \n        "type": "all"\n      
+}, \n      {\n        "items": [\n          "Why <em>WonderWidgets</em> 
+are great", \n          "Who <em>buys</em> WonderWidgets"\n        ], 
+\n        "title": "Overview", \n        "type": "all"\n      }\n    ], 
+\n    "title": "Sample Slide Show"\n  }\n}\n"
+----
+
+
+=== Body as stream (3/3)
+
+[source,php]
+----
+\json_decode($body)
+----
+
+[source]
+----
+class stdClass#40 (1) {
+  public $slideshow =>
+  class stdClass#34 (4) {
+      public $author =>  string(11) "Yours Truly"
+      public $date =>      string(19) "date of publication"
+      public $slides =>
+        array(2) {
+          [0] =>      class stdClass#36 (2) {        ...      }
+          [1] =>      class stdClass#39 (3) {        ...      }
+        }
+      public $title =>    string(17) "Sample Slide Show"
+  }
+}
+----
+
+=== Post
+
+[source,php]
+----
+$client->post(    '/post',
+    [
+        'json' => ['foo' => 'bar'],
+    ]
+);
+----
+
+[source]
+----
+HTTP/1.1 200 OK
+
+{
+  "args": {}, 
+  "data": "{\"foo\":\"bar\"}", 
+  "headers": {
+    ...
+  }, 
+  "json": {
+    "foo": "bar"
+  },
+  ...
+}
+
+----
+
+== Async Requests
+
+[source,php]
+----
+$promise = $client->getAsync('/get');
+
+$promise->then(
+    function ($response) {
+        echo Psr7\str($response);
+    },
+    function ($e) {
+        echo Psr7\str($e->getResponse());
+    }
+);
+
+echo PHP_EOL . "...... Call not send .... " . PHP_EOL . PHP_EOL;
+
+$promise->wait();
+----
+
+=== Error
+
+[source,php]
+----
+$promise = $client->getAsync('/status/500', 
+        ['http_errors' => false]
+    );
+
+$promise->then(
+    function ($response) {
+        echo Psr7\str($response);
+    },
+    function ($e) {
+        echo Psr7\str($e->getResponse());
+    }
+);
+
+$promise->wait();
+----
+
+
+=== Chain
+
+[source,php]
+----
+$statusCode = 0;
+
+$promise = $client->getAsync('/get');
+$promise->then( function ($response) { 
+  return $response->getStatusCode(); 
+})->then( function (int $val) { 
+    echo "The status code is "; sleep(2); 
+    return $val; 
+})->then( function (int $val) { 
+    echo $val; return $val; 
+})->then( function (int $val) use (&$statusCode) { 
+    echo PHP_EOL; 
+    $statusCode = $val; 
+});
+
+$promise->wait();
+echo PHP_EOL . "Final result : " . $statusCode . PHP_EOL;
+----
+
+
+
+== Concurrent (1/5)
+
+[source,php]
+----
+
+$promises = [
+    'image' => $client->getAsync('/image'),
+    'png'   => $client->getAsync('/image/png'),
+    'jpeg'  => $client->getAsync('/image/jpeg'),
+    'webp'  => $client->getAsync('/image/webp'),
+];
+
+GuzzleHttp\Promise\unwrap($promises);
+
+$results = \GuzzleHttp\Promise\settle($promises)->wait();
+
+echo '/image : '      . $results['image']['value']->getStatusCode() . PHP_EOL;
+echo '/image/png : '  . $results['png']  ['value']->getStatusCode() . PHP_EOL;
+echo '/image/jpeg : ' . $results['jpeg'] ['value']->getStatusCode() . PHP_EOL;
+echo '/image/webp : ' . $results['webp'] ['value']->getStatusCode() . PHP_EOL;
+
+----
+
+=== Concurrent (2/5)
+
+[source,php]
+----
+$promises = [
+    'image' => $client->getAsync('/image'),
+    'png'   => $client->getAsync('/image/png'),
+    'jpeg'  => $client->getAsync('/image/jpeg'),
+    'webp'  => $client->getAsync('/image/webp'),
+    'error' => $client->getAsync('/status/500'),
+];
+
+try {
+    GuzzleHttp\Promise\unwrap($promises);
+}catch (GuzzleHttp\Exception\RequestException $e) {
+    if ($e->hasResponse()) {
+        echo Psr7\str($e->getResponse());
+    }
+}
+
+$results = \GuzzleHttp\Promise\settle($promises)->wait();
+----
+
+=== Concurrent (3/5)
+
+[source,php]
+----
+$promises = [
+    'image' => $client->getAsync('/image'),
+    'png'   => $client->getAsync('/image/png'),
+    'jpeg'  => $client->getAsync('/image/jpeg'),
+    'webp'  => $client->getAsync('/image/webp'),
+    'error' => $client->getAsync('/status/500'),
+];
+
+// GuzzleHttp\Promise\unwrap($promises);
+
+$results = \GuzzleHttp\Promise\settle($promises)->wait();
+
+echo '/status/500 : ' . $results['error']['state'] . PHP_EOL;
+----
+
+
+[source]
+----
+/status/500 : rejected
+----
+
+
+=== Concurrent (4/5)
+
+[source,php]
+----
+$promises = [
+    'delay8' => $client->getAsync('/delay/8')->then(
+        function () {
+            echo 'Finish to get /delay/8' . PHP_EOL;
+        }
+    ),
+    'delay6' => $client->getAsync('/delay/6')->then(function () { echo 'Finish to get /delay/6' . PHP_EOL; }),
+    'delay4' => $client->getAsync('/delay/4')->then(function () { echo 'Finish to get /delay/4' . PHP_EOL; }),
+    'delay2' => $client->getAsync('/delay/2')->then(function () { echo 'Finish to get /delay/2' . PHP_EOL; }),
+    'delay9' => $client->getAsync('/delay/9')->then(function () { echo 'Finish to get /delay/9' . PHP_EOL; }),
+    'delay7' => $client->getAsync('/delay/7')->then(function () { echo 'Finish to get /delay/7' . PHP_EOL; }),
+    'delay5' => $client->getAsync('/delay/5')->then(function () { echo 'Finish to get /delay/5' . PHP_EOL; }),
+    'delay3' => $client->getAsync('/delay/3')->then(function () { echo 'Finish to get /delay/3' . PHP_EOL; }),
+    'delay1' => $client->getAsync('/delay/1')->then(function () { echo 'Finish to get /delay/1' . PHP_EOL; }),
+];
+
+$results = \GuzzleHttp\Promise\unwrap($promises);
+$results = \GuzzleHttp\Promise\settle($promises)->wait();
+
+----
+
+=== Concurrent (5/5)
+
+[source]
+----
+Finish to get /delay/1
+Finish to get /delay/2
+Finish to get /delay/3
+Finish to get /delay/4
+Finish to get /delay/5
+Finish to get /delay/6
+Finish to get /delay/7
+Finish to get /delay/8
+Finish to get /delay/9
+----
+
+
+== Pool connection (1/2)
+
+[source,php]
+----
+$requests = function ($total) {    
+    for ($i = 0; $i < $total; $i++) {
+        $uri = 'delay/' . ($i % 10);
+        echo "Create Request  $i  with uri $uri" . PHP_EOL;
+        yield new Request('GET', $uri);
+    }
+};
+
+$pool = new Pool($client, $requests(10), [
+    'concurrency' => 5,
+    'fulfilled' => function ($response, $index) {
+        echo "Fulfilled Request $index for url " . json_decode($response->getBody())->url . PHP_EOL;
+    },
+    'rejected' => function ($reason, $index) {},
+]);
+
+// Initiate the transfers and create a promise
+$promise = $pool->promise();
+
+// Force the pool of requests to complete.
+$promise->wait();
+----
+
+
+=== Pool connection (2/2)
+
+[source]
+----
+Create Request  0  with uri delay/0
+Create Request  1  with uri delay/1
+Create Request  2  with uri delay/2
+Create Request  3  with uri delay/3
+Create Request  4  with uri delay/4
+Fulfilled Request 0 for url http://localhost:8086/delay/0
+Create Request  5  with uri delay/5
+Fulfilled Request 1 for url http://localhost:8086/delay/1
+Create Request  6  with uri delay/6
+Fulfilled Request 2 for url http://localhost:8086/delay/2
+Create Request  7  with uri delay/7
+Fulfilled Request 3 for url http://localhost:8086/delay/3
+Create Request  8  with uri delay/8
+Fulfilled Request 4 for url http://localhost:8086/delay/4
+Create Request  9  with uri delay/9
+Fulfilled Request 5 for url http://localhost:8086/delay/5
+Fulfilled Request 6 for url http://localhost:8086/delay/6
+Fulfilled Request 7 for url http://localhost:8086/delay/7
+Fulfilled Request 8 for url http://localhost:8086/delay/8
+Fulfilled Request 9 for url http://localhost:8086/delay/9
+----
+
+== Annexes
+
+* MiddleWare
+* gregurco/guzzle-bundle-oauth2-plugin
+
+== Questions

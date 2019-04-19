@@ -1,0 +1,9 @@
+# From 
+version: '3'
+
+
+services:
+  httpbin:
+    image: kennethreitz/httpbin
+    ports:
+      - 8086:80 
